@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Sentinel Dashboard</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-0:#06060b;--bg-1:#0c0c14;--bg-2:#12121e;--bg-3:#1a1a2e;
+  --text-0:#fff;--text-1:#b8b8d0;--text-2:#6a6a8a;
+  --accent:#00e5ff;--danger:#ff3b3b;--warn:#ffa500;--success:#00ff88;
+  --glass:rgba(255,255,255,0.03);--glass-border:rgba(255,255,255,0.06);
+  --K1:#ff2d7b;--K2:#00e5ff;--K3:#ff8a00;--K4:#4d7cff;--K5:#00ff88;
+  --radius:16px;--radius-sm:10px;
+  --font:'Outfit',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg-0);color:var(--text-0);font-family:var(--font);min-height:100vh;overflow-x:hidden}
+.dash{max-width:520px;margin:0 auto;padding:12px 14px 80px}
+@media(min-width:768px){.dash{max-width:900px;padding:20px 24px 40px}}
+@media(min-width:1200px){.dash{max-width:1100px}}
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 0 20px}
+.logo{font-size:15px;font-weight:700;letter-spacing:2px;color:var(--accent);font-family:var(--mono);text-transform:uppercase}
+.logo span{color:var(--text-2);font-weight:300}
+.time{font-size:11px;color:var(--text-2);font-family:var(--mono)}
+.card{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius);padding:16px;margin-bottom:12px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);transition:all .3s ease}
+.card:hover{border-color:rgba(255,255,255,0.1)}
+.card-title{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text-2);margin-bottom:12px;font-family:var(--mono)}
+.pulse-wrap{text-align:center;padding:24px 0}
+.pulse-icon{font-size:48px;margin-bottom:8px;animation:pglow 2s ease-in-out infinite}
+@keyframes pglow{0%,100%{opacity:.8;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}
+.pulse-label{font-size:13px;font-weight:700;letter-spacing:4px;font-family:var(--mono)}
+.pulse-score{font-size:56px;font-weight:800;line-height:1;margin:8px 0}
+.pulse-sub{font-size:12px;color:var(--text-2)}
+.flag-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--glass-border)}
+.flag-item:last-child{border:none}
+.flag-days{font-size:11px;font-family:var(--mono);color:var(--danger);min-width:32px;font-weight:600}
+.flag-text{font-size:13px;color:var(--text-1);line-height:1.4}
+.flag-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;font-family:var(--mono)}
+.pbar-wrap{margin-bottom:8px}
+.pbar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+.pbar-label span:first-child{color:var(--text-1)}
+.pbar-label span:last-child{font-family:var(--mono);font-weight:600}
+.pbar{height:6px;background:var(--bg-3);border-radius:3px;overflow:hidden}
+.pbar-fill{height:100%;border-radius:3px;transition:width 1s ease}
+.rings-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.ring-col{text-align:center}
+.ring-bar{height:60px;background:var(--bg-3);border-radius:4px;position:relative;overflow:hidden;margin-bottom:4px}
+.ring-bar-fill{position:absolute;bottom:0;left:0;right:0;border-radius:4px;transition:height 1s ease}
+.ring-label{font-size:10px;font-family:var(--mono);font-weight:600}
+.ring-pct{font-size:10px;color:var(--text-2);font-family:var(--mono)}
+.proj-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--glass-border)}
+.proj-row:last-child{border:none}
+.proj-status{font-size:10px;flex-shrink:0}
+.proj-info{flex:1;min-width:0}
+.proj-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.proj-meta{font-size:11px;color:var(--text-2);font-family:var(--mono)}
+.proj-pct{font-size:14px;font-weight:700;font-family:var(--mono);min-width:40px;text-align:right}
+.proj-bar{width:60px;height:4px;background:var(--bg-3);border-radius:2px;overflow:hidden;flex-shrink:0}
+.proj-bar-fill{height:100%;border-radius:2px}
+.agent-card{padding:12px;border-radius:var(--radius-sm);border:1px solid var(--glass-border);margin-bottom:8px}
+.agent-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.agent-id{font-size:13px;font-weight:600;font-family:var(--mono)}
+.agent-health{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600}
+.agent-detail{font-size:11px;color:var(--text-2);line-height:1.5}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:500px){.grid-2{grid-template-columns:1fr}}
+.stat-num{font-size:28px;font-weight:800;font-family:var(--mono);line-height:1}
+.stat-label{font-size:11px;color:var(--text-2);margin-top:4px}
+.dl-item{display:flex;gap:8px;align-items:baseline;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.dl-item:last-child{border:none}
+.dl-date{font-size:10px;font-family:var(--mono);color:var(--text-2);min-width:65px}
+.dl-title{font-size:12px;color:var(--text-1)}
+.ach-item{padding:6px 0;font-size:12px;color:var(--text-1);line-height:1.4;border-bottom:1px solid rgba(255,255,255,0.03)}
+.ach-item:last-child{border:none}
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px}
+.spinner{width:40px;height:40px;border:3px solid var(--bg-3);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:12px;color:var(--text-2);font-family:var(--mono);letter-spacing:2px}
+.refresh-bar{position:fixed;top:0;left:0;right:0;height:3px;background:var(--accent);transform-origin:left;animation:refill 300s linear;z-index:100}
+@keyframes refill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.nav{position:fixed;bottom:0;left:0;right:0;background:rgba(6,6,11,0.95);backdrop-filter:blur(20px);border-top:1px solid var(--glass-border);display:flex;justify-content:center;gap:0;z-index:50;padding:8px 0}
+.nav-btn{background:none;border:none;color:var(--text-2);font-size:10px;font-family:var(--mono);padding:8px 20px;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all .2s}
+.nav-btn.active{color:var(--accent)}
+.fade-in{animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+if(window.Telegram&&window.Telegram.WebApp){window.Telegram.WebApp.ready();window.Telegram.WebApp.expand()}
+const e=React.createElement,{useState:uS,useEffect:uE,useCallback:uC}=React;
+const API="https://artempolishchuk.app.n8n.cloud/webhook/sentinel-dashboard";
+const KEY="sentinel-dash-a25ca941d95c4e1e";
+const RC={K1:"#ff2d7b",K2:"#00e5ff",K3:"#ff8a00",K4:"#4d7cff",K5:"#00ff88"};
+const RG={K1:"0 0 20px #ff2d7b40",K2:"0 0 20px #00e5ff40",K3:"0 0 20px #ff8a0040",K4:"0 0 20px #4d7cff40",K5:"0 0 20px #00ff8840"};
+const SE={on_track:"\u{1F7E2}",paused:"\u{1F7E1}",at_risk:"\u{1F534}",blocked:"\u{1F534}"};
+const PC={green:{bg:"#00ff8815",border:"#00ff8840",glow:"0 0 40px #00ff8830",icon:"\u2726",label:"ONLINE"},yellow:{bg:"#ffa50015",border:"#ffa50040",glow:"0 0 40px #ffa50030",icon:"\u26A0",label:"\u0412\u041D\u0418\u041C\u0410\u041D\u0418\u0415"},red:{bg:"#ff3b3b15",border:"#ff3b3b40",glow:"0 0 40px #ff3b3b30",icon:"\u2716",label:"\u041A\u0420\u0418\u0422\u0418\u0427\u041D\u041E"}};
+function fmtDate(d){if(!d)return"\u2014";return new Date(d).toLocaleDateString("ru-RU",{day:"numeric",month:"short"})}
+function timeAgo(d){if(!d)return"\u2014";const m=Math.floor((Date.now()-new Date(d).getTime())/60000);if(m<60)return m+"\u043C \u043D\u0430\u0437\u0430\u0434";if(m<1440)return Math.floor(m/60)+"\u0447 \u043D\u0430\u0437\u0430\u0434";return Math.floor(m/1440)+"\u0434 \u043D\u0430\u0437\u0430\u0434"}
+
+function App(){
+  const[data,setData]=uS(null);
+  const[loading,setLoading]=uS(true);
+  const[error,setError]=uS(null);
+  const[screen,setScreen]=uS(0);
+  const[rk,setRk]=uS(0);
+
+  const fetchData=uC(async()=>{
+    try{const r=await fetch(API,{headers:{"x-dashboard-key":KEY}});if(!r.ok)throw new Error(r.status);const d=await r.json();setData(d);setError(null)}catch(e){setError(e.message)}finally{setLoading(false)}
+  },[]);
+
+  uE(()=>{fetchData();const iv=setInterval(fetchData,300000);return()=>clearInterval(iv)},[fetchData]);
+  const refresh=()=>{setRk(k=>k+1);setLoading(true);fetchData()};
+
+  if(loading&&!data)return e("div",null,e("div",{className:"loading"},e("div",{className:"spinner"}),e("div",{className:"loading-text"},"SENTINEL ONLINE")));
+  if(error&&!data)return e("div",null,e("div",{className:"loading"},e("div",{style:{color:"var(--danger)",fontSize:14}},"\u041E\u0448\u0438\u0431\u043A\u0430: "+error),e("button",{onClick:refresh,style:{background:"var(--bg-3)",border:"none",color:"var(--text-0)",padding:"8px 20px",borderRadius:8,cursor:"pointer"}},"\u041F\u043E\u0432\u0442\u043E\u0440\u0438\u0442\u044C")));
+
+  const{pulse,red_flags,progress,projects,agents,infra,rings,deadlines,achievements_24h,snapshot,finances,sessions,meta}=data||{};
+  const pc=PC[pulse?.color]||PC.green;
+  const pclr=pulse?.color==="green"?"var(--success)":pulse?.color==="yellow"?"var(--warn)":"var(--danger)";
+
+  function Screen0(){return e("div",{className:"fade-in"},
+    e("div",{className:"card",style:{background:pc.bg,borderColor:pc.border,boxShadow:pc.glow}},
+      e("div",{className:"pulse-wrap"},
+        e("div",{className:"pulse-icon",style:{color:pclr}},pc.icon),
+        e("div",{className:"pulse-label",style:{color:pclr}},pc.label),
+        e("div",{className:"pulse-score"},pulse?.score||0),
+        e("div",{className:"pulse-sub"},(pulse?.agents_healthy||0)+"/"+(pulse?.agents_total||0)+" \u0430\u0433\u0435\u043D\u0442\u043E\u0432 \u00B7 "+(pulse?.workflows_health_pct||0)+"% workflows"))),
+    red_flags?.total>0&&e("div",{className:"card"},
+      e("div",{className:"card-title",style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+        e("span",null,"\u26A1 \u041A\u0440\u0430\u0441\u043D\u044B\u0435 \u0444\u043B\u0430\u0433\u0438"),
+        e("span",{className:"flag-badge",style:{background:"rgba(255,59,59,0.1)",color:"var(--danger)"}},red_flags.total)),
+      e("div",{style:{display:"flex",gap:12,marginBottom:12}},
+        e("div",{className:"flag-badge",style:{background:"rgba(255,165,0,0.1)",color:"var(--warn)"}},"\u0417\u0430\u0432\u0438\u0441\u043B\u043E: "+red_flags.stuck),
+        e("div",{className:"flag-badge",style:{background:"rgba(255,59,59,0.1)",color:"var(--danger)"}},"\u041F\u0440\u043E\u0441\u0440\u043E\u0447\u0435\u043D\u043E: "+red_flags.overdue)),
+      (red_flags.items||[]).map((f,i)=>e("div",{key:i,className:"flag-item"},e("div",{className:"flag-days"},f.days+"\u0434"),e("div",{className:"flag-text"},f.title)))),
+    e("div",{className:"card"},
+      e("div",{className:"card-title"},"\u{1F4C8} \u041F\u0440\u043E\u0433\u0440\u0435\u0441\u0441 Universe"),
+      e("div",{className:"pbar-wrap"},
+        e("div",{className:"pbar-label"},e("span",null,"\u041E\u0431\u0449\u0438\u0439 \u043F\u0440\u043E\u0433\u0440\u0435\u0441\u0441"),e("span",{style:{color:"var(--accent)"}},(progress?.total_pct||0)+"%")),
+        e("div",{className:"pbar"},e("div",{className:"pbar-fill",style:{width:(progress?.total_pct||0)+"%",background:"linear-gradient(90deg,var(--K4),var(--accent))"}})),
+      ),
+      e("div",{className:"rings-grid",style:{marginTop:16}},
+        (rings||[]).map(r=>e("div",{key:r.ring,className:"ring-col"},
+          e("div",{className:"ring-bar"},e("div",{className:"ring-bar-fill",style:{height:r.coverage+"%",background:RC[r.ring]||"#fff",boxShadow:RG[r.ring]}})),
+          e("div",{className:"ring-label",style:{color:RC[r.ring]}},r.ring),
+          e("div",{className:"ring-pct"},r.coverage+"%"))))),
+    e("div",{className:"card"},
+      e("div",{className:"card-title"},"\u{1F3AF} \u041F\u0440\u043E\u0435\u043A\u0442\u044B ("+(projects?.length||0)+")"),
+      (projects||[]).map((p,i)=>e("div",{key:i,className:"proj-row"},
+        e("div",{className:"proj-status"},SE[p.status]||"\u26AA"),
+        e("div",{className:"proj-info"},
+          e("div",{className:"proj-name"},p.name),
+          e("div",{className:"proj-meta"},(p.ring||"")+" \u00B7 vel:"+(p.velocity_7d>0?"\u2191":p.velocity_7d<0?"\u2193":"\u2014")+Math.abs(p.velocity_7d||0).toFixed(1)+" \u00B7 h:"+Math.round(p.health_score||0))),
+        e("div",{className:"proj-bar"},e("div",{className:"proj-bar-fill",style:{width:(p.percent||0)+"%",background:RC[p.ring]||"var(--accent)"}})),
+        e("div",{className:"proj-pct",style:{color:RC[p.ring]||"var(--accent)"}},(p.percent||0)+"%"))))
+  )}
+
+  function Screen1(){return e("div",{className:"fade-in"},
+    e("div",{className:"card"},
+      e("div",{className:"card-title"},"\u{1F916} \u0410\u0433\u0435\u043D\u0442\u044B \u0422\u0440\u0438\u0443\u043C\u0432\u0438\u0440\u0430\u0442\u0430"),
+      (agents||[]).map((a,i)=>e("div",{key:i,className:"agent-card"},
+        e("div",{className:"agent-head"},
+          e("div",{className:"agent-id"},a.id),
+          e("div",{className:"agent-health",style:{background:a.health==="healthy"?"rgba(0,255,136,0.1)":"rgba(255,59,59,0.1)",color:a.health==="healthy"?"var(--success)":"var(--danger)"}},(a.health==="healthy"?"\u25CF":"\u25CB")+" "+a.health)),
+        e("div",{className:"agent-detail"},"\u0414\u0435\u0439\u0441\u0442\u0432\u0438\u0435: "+(a.last_action||"\u2014"),e("br"),timeAgo(a.last_action_at)+" \u00B7 \u043E\u0448\u0438\u0431\u043E\u043A: "+a.error_count)))),
+    e("div",{className:"card"},
+      e("div",{className:"card-title"},"\u{1F3C6} \u0414\u043E\u0441\u0442\u0438\u0436\u0435\u043D\u0438\u044F 24\u0447"),
+      achievements_24h?.length>0?achievements_24h.map((a,i)=>e("div",{key:i,className:"ach-item"},"\u2022 "+(typeof a==="string"?a:JSON.stringify(a)))):e("div",{style:{fontSize:12,color:"var(--text-2)"}},"\u041D\u0435\u0442 \u0434\u0430\u043D\u043D\u044B\u0445 \u0437\u0430 \u043F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0435 24\u0447")),
+    e("div",{className:"card"},
+      e("div",{className:"card-title"},"\u{1F4C5} \u0414\u0435\u0434\u043B\u0430\u0439\u043D\u044B"),
+      deadlines?.length>0?deadlines.map((d,i)=>e("div",{key:i,className:"dl-item"},e("div",{className:"dl-date"},fmtDate(d.due_date)),e("div",{className:"dl-title"},d.title))):e("div",{style:{fontSize:12,color:"var(--text-2)"}},"\u041D\u0435\u0442 \u0437\u0430\u0434\u0430\u0447 \u0441 \u0434\u0435\u0434\u043B\u0430\u0439\u043D\u0430\u043C\u0438")),
+    e("div",{className:"card"},
+      e("div",{className:"card-title"},"\u{1F4AC} \u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0435 \u0441\u0435\u0441\u0441\u0438\u0438"),
+      (sessions||[]).map((s,i)=>e("div",{key:i,className:"dl-item"},e("div",{className:"dl-date",style:{color:"var(--accent)"}},(s.agent||"").substring(0,8)),e("div",{className:"dl-title"},s.date+" \u00B7 "+s.outcomes_count+" \u0438\u0441\u0445\u043E\u0434\u043E\u0432"))))
+  )}
+
+  function Screen2(){return e("div",{className:"fade-in"},
+    e("div",{className:"card"},
+      e("div",{className:"card-title"},"\u2B55 \u041A\u043E\u043B\u044C\u0446\u0430 K1\u2014K5"),
+      (rings||[]).map(r=>e("div",{key:r.ring,style:{marginBottom:12}},
+        e("div",{className:"pbar-label"},e("span",{style:{color:RC[r.ring],fontWeight:600}},r.ring+" \u00B7 "+r.name),e("span",{style:{color:RC[r.ring]}},r.coverage+"%")),
+        e("div",{className:"pbar"},e("div",{className:"pbar-fill",style:{width:r.coverage+"%",background:RC[r.ring]}})),
+        e("div",{style:{fontSize:10,color:"var(--text-2)",marginTop:2}},r.status)))),
+    e("div",{className:"card"},
+      e("div",{className:"card-title"},"\u2699\uFE0F \u0418\u043D\u0444\u0440\u0430\u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0430"),
+      e("div",{className:"grid-2"},
+        e("div",null,e("div",{className:"stat-num",style:{color:"var(--accent)"}},infra?.workflows_ok||0),e("div",{className:"stat-label"},"workflows OK")),
+        e("div",null,e("div",{className:"stat-num",style:{color:(infra?.workflow_health_pct||0)>=90?"var(--success)":"var(--warn)"}},(infra?.workflow_health_pct||0)+"%"),e("div",{className:"stat-label"},"\u0437\u0434\u043E\u0440\u043E\u0432\u044C\u0435"))),
+      e("div",{style:{fontSize:11,color:"var(--text-2)",marginTop:8}},infra?.assessment||"")),
+    e("div",{className:"card"},
+      e("div",{className:"card-title"},"\u{1F4F8} \u0421\u043D\u0438\u043C\u043E\u043A \u0434\u043D\u044F \u00B7 "+(snapshot?.date||"")),
+      e("div",{className:"grid-2"},
+        e("div",null,e("div",{className:"stat-num"},snapshot?.tasks_created||0),e("div",{className:"stat-label"},"\u0441\u043E\u0437\u0434\u0430\u043D\u043E \u0437\u0430\u0434\u0430\u0447")),
+        e("div",null,e("div",{className:"stat-num"},snapshot?.tasks_completed||0),e("div",{className:"stat-label"},"\u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u043E")))),
+    e("div",{className:"card"},
+      e("div",{className:"card-title"},"\u{1F4B0} \u0424\u0438\u043D\u0430\u043D\u0441\u044B (v1)"),
+      e("div",{style:{fontSize:12,color:"var(--text-2)"}},finances?.note||""),
+      e("div",{style:{fontSize:12,color:"var(--text-1)",marginTop:4}},"AI: "+(finances?.monthly_ai_cost||""))),
+    e("div",{className:"card",style:{opacity:.6}},
+      e("div",{style:{fontSize:10,color:"var(--text-2)",fontFamily:"var(--mono)"}},"v"+(meta?.version||"")+" \u00B7 "+(meta?.sections||0)+" \u0441\u0435\u043A\u0446\u0438\u0439 \u00B7 ",e("span",{style:{cursor:"pointer",color:"var(--accent)"},onClick:refresh},"\u21BB \u043E\u0431\u043D\u043E\u0432\u0438\u0442\u044C")))
+  )}
+
+  const screens=[Screen0,Screen1,Screen2];
+  const names=["\u041E\u0411\u0417\u041E\u0420","\u041A\u041E\u041C\u0410\u041D\u0414\u0410","\u0421\u0418\u0421\u0422\u0415\u041C\u0410"];
+
+  return e("div",null,
+    e("div",{key:rk,className:"refresh-bar"}),
+    e("div",{className:"dash"},
+      e("div",{className:"header"},
+        e("div",{className:"logo"},"SENTINEL ",e("span",null,"Dashboard")),
+        e("div",{className:"time"},new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+" BKK")),
+      e(screens[screen])),
+    e("div",{className:"nav"},
+      names.map((n,i)=>e("button",{key:i,className:"nav-btn"+(screen===i?" active":""),onClick:()=>setScreen(i)},n)))
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(e(App));
+</script>
+</body>
+</html>
